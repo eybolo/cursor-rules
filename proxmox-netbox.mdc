@@ -1,0 +1,63 @@
+# Reglas — Proxmox / Netbox
+
+## Proxmox
+
+### Antes de cualquier cambio en VMs/CTs de producción
+- **Snapshot obligatorio** antes de cambios mayores
+- Documentar el propósito del snapshot: `pre-upgrade-nginx-2024-03`
+- Verificar que el snapshot se creó correctamente antes de proceder
+
+### Gestión de VMs y CTs
+- Usar API o CLI para cambios reproducibles, **no solo la UI**
+- Todo cambio de infra en Proxmox debe quedar documentado o en código (Terraform provider)
+- Preferir LXC para servicios stateless, VMs para workloads que lo requieran
+- IDs de VMs/CTs deben seguir un esquema consistente y documentado
+
+### Documentación obligatoria por VM/CT
+```
+ID: 101
+Nombre: srv-nginx-prod
+Propósito: reverse proxy producción
+Recursos: 2 vCPU, 2GB RAM, 20GB disco
+Red: vmbr0 — IP: 192.168.1.10/24
+Owner: infraestructura
+Creado: 2024-01-15
+```
+
+### Naming convention
+- VMs: `srv-{rol}-{entorno}` → `srv-nginx-prod`, `srv-postgres-dev`
+- CTs: `ct-{rol}-{entorno}` → `ct-monitoring-prod`
+- Templates: `tpl-{os}-{version}` → `tpl-ubuntu-2204`
+
+---
+
+## Netbox
+
+### Principio fundamental
+Netbox es la **fuente de verdad** de toda la infraestructura. Si no está en Netbox, no existe oficialmente.
+
+### Reglas
+- Mantener Netbox actualizado **durante o antes** del cambio, nunca después
+- Si generás configs dinámicas desde Netbox (inventario Ansible, DNS, etc.):
+  validar que los datos estén completos y correctos antes de ejecutar
+- Cambios de red (IPs, VLANs, prefijos) deben reflejarse en Netbox primero
+- Documentar roles de dispositivos, servicios corriendo y contacto del owner
+
+### Integración con Ansible
+```yaml
+# Usar inventario dinámico desde Netbox
+plugin: netbox.netbox.nb_inventory
+api_endpoint: http://netbox.interno
+token: "{{ lookup('env', 'NETBOX_TOKEN') }}"
+validate_certs: true
+group_by:
+  - device_roles
+  - sites
+  - tags
+```
+
+### Campos mínimos obligatorios por dispositivo/VM
+- Nombre, rol, sitio, estado (active/planned/decommissioning)
+- IP de gestión asignada y documentada
+- Owner o equipo responsable
+- Tags de entorno: `prod`, `staging`, `dev`

@@ -1,0 +1,62 @@
+# Reglas — Ansible
+
+## Flujo obligatorio
+
+```bash
+ansible-lint playbook.yml          # validar antes de ejecutar
+ansible-playbook --syntax-check    # verificar sintaxis
+ansible-playbook --check --diff    # dry-run con diferencias
+# recién después:
+ansible-playbook playbook.yml
+```
+
+**Nunca ejecutar un playbook nuevo sin `--check --diff` primero.**
+
+## Estructura de roles
+
+```
+roles/
+└── nombre-rol/
+    ├── tasks/
+    │   └── main.yml
+    ├── handlers/
+    │   └── main.yml
+    ├── defaults/
+    │   └── main.yml      ← valores por defecto sobreescribibles
+    ├── vars/
+    │   └── main.yml      ← valores fijos del rol
+    ├── templates/
+    ├── files/
+    └── meta/
+        └── main.yml
+```
+
+## Reglas
+
+- Variables en `group_vars/` y `host_vars/`, **nunca hardcodeadas en el playbook**
+- Secrets con `ansible-vault`, nunca en texto plano en el repo
+- Tags en todas las tasks para permitir ejecución parcial:
+  ```yaml
+  tags: [configuracion, nginx, produccion]
+  ```
+- Handlers para reiniciar servicios **solo cuando hay cambios reales**
+- Idempotencia obligatoria: verificar estado antes de cambiar
+- Nombres de tasks descriptivos en español o inglés pero consistentes
+- `become: true` solo en las tasks que realmente lo necesiten, no global
+
+## Inventario
+
+- Inventario dinámico cuando sea posible (desde Netbox o cloud provider)
+- Separar inventarios por entorno: `inventories/dev`, `inventories/prod`
+- Nunca mezclar hosts de producción y no-producción en el mismo grupo
+
+## Ejemplo de task bien escrita
+
+```yaml
+- name: Asegurar que nginx esté instalado y en la versión correcta
+  ansible.builtin.package:
+    name: nginx=1.24.*
+    state: present
+  tags: [nginx, instalacion]
+  notify: reiniciar nginx
+```

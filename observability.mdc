@@ -1,0 +1,51 @@
+# Reglas — Observabilidad (Prometheus / Grafana)
+
+## Métricas
+
+- Todo servicio debe exponer métricas en `/metrics` en formato Prometheus
+- Instrumentar con el método RED: **R**ate (tasa), **E**rrors (errores), **D**uration (latencia)
+- Labels consistentes entre métricas para que los dashboards sean reutilizables:
+  ```
+  environment, service, instance, version
+  ```
+- Nunca usar labels de alta cardinalidad (IDs de usuario, IPs, UUIDs)
+
+## Alertas
+
+- Verificar que la query retorna datos en **Grafana Explore antes** de crear la alerta
+- Cada alerta debe tener anotaciones completas:
+  ```yaml
+  annotations:
+    summary: "{{ $labels.service }} — tasa de errores alta"
+    description: "La tasa de errores supera el {{ $value }}% en los últimos 5 minutos"
+    runbook: "https://wiki.interno/runbooks/nombre-alerta"
+  ```
+- Definir severidad consistente: `critical` (requiere acción inmediata), `warning` (monitorear)
+- Alertas deben ser **accionables**: si no hay acción clara, no es una alerta, es un dashboard
+- Definir SLOs antes de escribir alertas — la alerta debe proteger el SLO
+
+## Grafana
+
+- Dashboards en código (JSON o Grafonnet), nunca solo en la UI
+- Un dashboard por servicio/dominio, no un mega-dashboard para todo
+- Variables de template para filtrar por `environment` y `service`
+- Provisioning automático de dashboards y datasources via config
+
+## Logs (Loki)
+
+- Logs estructurados en JSON siempre:
+  ```json
+  {"timestamp": "...", "level": "error", "service": "api", "message": "...", "trace_id": "..."}
+  ```
+- Nunca loguear datos sensibles: passwords, tokens, PII
+- Labels de Loki mínimos y de baja cardinalidad: `service`, `environment`, `host`
+
+## Validación
+
+```bash
+# Validar reglas de alertas
+promtool check rules alertas.yml
+
+# Validar configuración de Prometheus
+promtool check config prometheus.yml
+```

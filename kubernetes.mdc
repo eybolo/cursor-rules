@@ -1,0 +1,64 @@
+# Reglas — Kubernetes / Helm
+
+## Manifiestos
+
+- Siempre definir `resources.requests` y `resources.limits` en todo Pod/Deployment
+- `readinessProbe` y `livenessProbe` obligatorios en todos los Deployments
+- Separar configuración con `ConfigMap` y secrets con `Secret` o External Secrets Operator
+- Usar `namespaces` para separar entornos: `dev`, `staging`, `prod`
+- Aplicar `NetworkPolicy` para aislar pods — denegar todo por defecto, permitir explícitamente
+- Nunca usar `latest` como tag de imagen en manifiestos
+- Definir `PodDisruptionBudget` para servicios críticos
+
+Estructura mínima de un Deployment:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nombre-servicio
+  namespace: prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nombre-servicio
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: nombre-servicio
+          image: registry/imagen:v1.2.3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+```
+
+## Helm
+
+- Parametrizar todo lo que cambia entre entornos en `values.yaml`
+- Un `values-dev.yaml`, `values-staging.yaml`, `values-prod.yaml` por entorno
+- Versionar charts con semver
+- `helm lint` y `helm template` antes de cualquier `helm upgrade`
+- Usar `--dry-run` para validar contra el cluster antes de aplicar
+
+## GitOps
+
+- Nunca `kubectl apply` directo en producción sin pasar por ArgoCD o Flux
+- Todo cambio de manifiesto via PR con revisión
+- ArgoCD configurado con sync manual para producción, automático para dev

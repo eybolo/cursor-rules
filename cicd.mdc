@@ -1,0 +1,66 @@
+# Reglas — CI/CD (GitHub Actions / GitLab CI)
+
+## Estructura de pipeline obligatoria
+
+```
+lint → test → build → scan → deploy-staging → [aprobación] → deploy-prod
+```
+
+Nunca saltear el stage de scan ni hacer deploy directo a prod sin pasar por staging.
+
+## Reglas generales
+
+- Secrets solo a través de variables de entorno del CI, **nunca en código ni en logs**
+- Imágenes y artefactos versionados con commit SHA o tag semver — nunca `latest` en prod
+- Caché de dependencias configurado para acelerar builds
+- Deploy a producción solo desde rama protegida (`main` o `master`)
+- Aprobación manual requerida antes de deploy a producción
+- Pipelines deben fallar rápido: lint y tests primero, build después
+
+## Seguridad en pipelines
+
+- Escaneo de imágenes Docker obligatorio antes de deploy: Trivy o Grype
+- Análisis de dependencias vulnerables: `trivy fs .` o equivalente
+- Secrets scanning en el repo: nunca commitear credenciales
+- Permisos mínimos en tokens del CI (solo los scopes necesarios)
+
+## GitHub Actions
+
+```yaml
+# Permisos mínimos por defecto
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    environment: production    # requiere aprobación manual
+    permissions:
+      contents: read
+      packages: write          # solo si necesita push a registry
+```
+
+## GitLab CI
+
+```yaml
+# Usar imágenes fijas, nunca latest
+image: alpine:3.19
+
+# Variables sensibles solo desde CI/CD Variables, nunca hardcodeadas
+# Environments para separar staging de prod con aprobaciones
+deploy-prod:
+  environment:
+    name: production
+  when: manual
+  only:
+    - main
+```
+
+## Validación de pipelines
+
+```bash
+# GitHub Actions — validar localmente
+act --dry-run
+
+# GitLab CI — validar sintaxis
+gitlab-ci-lint .gitlab-ci.yml
+```

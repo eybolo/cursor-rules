@@ -1,0 +1,51 @@
+# Reglas — Bash / Shell
+
+## Estructura base obligatoria
+
+Todo script debe comenzar con:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly LOG_FILE="/var/log/nombre_script.log"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
+die() { log "ERROR: $*"; exit 1; }
+
+main() {
+  log "Iniciando..."
+  # lógica aquí
+}
+
+main "$@"
+```
+
+## Reglas
+
+- Validar todos los argumentos y variables antes de usarlos
+- Usar `trap` para limpieza en caso de errores: `trap cleanup EXIT`
+- Funciones con nombres descriptivos en `snake_case`
+- Comentarios explicando el "por qué", no el "qué"
+- No usar `sudo` dentro de scripts sin advertencia explícita al usuario
+- Siempre incluir modo `--dry-run` en scripts que modifican sistemas
+- Usar `readonly` para constantes
+- Preferir `[[ ]]` sobre `[ ]` para condiciones
+- Variables siempre entre comillas: `"$variable"`
+
+## Validación antes de ejecutar
+
+```bash
+# Verificar sintaxis
+bash -n script.sh
+
+# Análisis estático
+shellcheck script.sh
+```
+
+## Logging
+
+- Loguear inicio, fin y cada paso importante con timestamp
+- Loguear errores con contexto suficiente para debuggear sin acceso al sistema
+- Nunca loguear passwords, tokens ni secrets

@@ -1,0 +1,55 @@
+# Reglas — Docker / Compose
+
+## Dockerfile
+
+- Imágenes base mínimas: preferir Alpine o Distroless
+- Multi-stage builds para reducir tamaño de imagen final
+- Nunca correr contenedores como root → siempre `USER nonroot` o UID específico
+- Versión fija en imágenes, **nunca `latest` en producción**
+- `HEALTHCHECK` obligatorio en servicios críticos
+- Variables sensibles: nunca en el Dockerfile, siempre en runtime secrets
+- Ordenar instrucciones de menos a más cambiantes para aprovechar cache de capas
+
+Estructura base:
+```dockerfile
+FROM alpine:3.19 AS builder
+WORKDIR /app
+COPY . .
+RUN apk add --no-cache <deps> && \
+    <build steps>
+
+FROM alpine:3.19
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+WORKDIR /app
+COPY --from=builder /app/dist .
+USER appuser
+HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:8080/health || exit 1
+ENTRYPOINT ["./app"]
+```
+
+## Docker Compose
+
+- Variables en `.env`, nunca hardcodeadas en el compose
+- `.env.example` con todas las variables documentadas y sin valores reales
+- `depends_on` con condición `service_healthy` para dependencias críticas
+- Redes explícitas definidas, no usar la red default
+- Volumes nombrados para datos persistentes
+
+Validación obligatoria antes de levantar:
+```bash
+docker compose config
+docker compose build --no-cache
+```
+
+## .dockerignore obligatorio
+
+```
+.git
+.env
+*.log
+node_modules
+__pycache__
+*.tfstate
+*.tfvars
+secrets/
+```

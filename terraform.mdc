@@ -1,0 +1,57 @@
+# Reglas — Terraform
+
+## Flujo obligatorio
+
+```bash
+terraform fmt        # formatear
+terraform validate   # validar sintaxis
+terraform plan       # revisar cambios
+# recién después:
+terraform apply
+```
+
+**Nunca `terraform apply` sin revisar el plan completo primero.**
+
+## Estructura de proyecto
+
+```
+proyecto-terraform/
+├── modules/
+│   └── nombre-modulo/
+│       ├── main.tf
+│       ├── variables.tf
+│       ├── outputs.tf
+│       └── README.md
+├── environments/
+│   ├── dev/
+│   ├── staging/
+│   └── prod/
+└── versions.tf
+```
+
+## Reglas
+
+- State remoto obligatorio para proyectos compartidos (no commitear `.tfstate`)
+- Workspaces o carpetas separadas por entorno (`dev/staging/prod`)
+- Usar `for_each` en lugar de `count` para recursos nombrados
+- Outputs siempre con `description` documentado
+- Tags obligatorios en todos los recursos:
+  ```hcl
+  tags = {
+    environment = var.environment
+    owner       = var.owner
+    project     = var.project
+    managed_by  = "terraform"
+  }
+  ```
+- Versiones de providers fijadas en `versions.tf`
+- Nunca commitear `.tfvars` con valores reales — usar `.tfvars.example`
+- Variables sensibles via variables de entorno `TF_VAR_*` o secret manager
+
+## Validación adicional
+
+```bash
+tflint              # linter de buenas prácticas
+tfsec .             # análisis de seguridad
+terraform-docs .    # generar documentación de módulos
+```
