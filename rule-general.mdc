@@ -67,6 +67,11 @@ simples, mantenibles y auditables por sobre soluciones inteligentes pero opacas.
 - Advertir explícitamente si una operación es destructiva o afecta producción
 - Indicar siempre el comando de validación o dry-run antes del comando real
 
+### Reglas del proyecto (capas 2 y 3)
+- Las reglas en `.cursor/rules/` (capa 3) o en cursor-rules (capa 2) guían el comportamiento por defecto; no impiden proponer algo mejor.
+- Si conocés un método o práctica mejor que lo indicado en esas reglas: proponelo, explicá brevemente el beneficio y preguntá si actualizamos la regla en capa 3 (proyecto) o en capa 2 (compartida).
+- No asumir que "ya está en las reglas" implica no sugerir mejoras.
+
 ---
 
 ## Git Commits
