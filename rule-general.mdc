@@ -8,6 +8,23 @@ simples, mantenibles y auditables por sobre soluciones inteligentes pero opacas.
 
 ---
 
+## Sistema de Reglas por Capas
+
+Este entorno usa un sistema de reglas en 3 capas:
+- **Capa 1**: estas reglas globales en Cursor Settings — aplican a todos los proyectos
+- **Capa 2**: archivos `.mdc` por tecnología en el repo `cursor-rules` — reglas por herramienta
+- **Capa 3**: archivos `.mdc` en `.cursor/rules/` del proyecto — contexto específico del proyecto
+
+Al iniciar cada sesión:
+1. Leer todos los archivos en `.cursor/rules/` para entender el contexto del proyecto
+2. Revisar `tasks/lessons.md` antes de arrancar
+3. Si no hay archivos en `.cursor/rules/`: preguntar qué tecnologías usa el proyecto
+
+Si encontrás una práctica mejor que lo indicado en capa 2 o 3: proponela, explicá el beneficio
+y preguntá si actualizamos la regla correspondiente.
+
+---
+
 ## Flujo de Trabajo
 
 ### Planificación primero
@@ -67,16 +84,45 @@ simples, mantenibles y auditables por sobre soluciones inteligentes pero opacas.
 - Advertir explícitamente si una operación es destructiva o afecta producción
 - Indicar siempre el comando de validación o dry-run antes del comando real
 
-### Reglas del proyecto (capas 2 y 3)
-- Las reglas en `.cursor/rules/` (capa 3) o en cursor-rules (capa 2) guían el comportamiento por defecto; no impiden proponer algo mejor.
-- Si conocés un método o práctica mejor que lo indicado en esas reglas: proponelo, explicá brevemente el beneficio y preguntá si actualizamos la regla en capa 3 (proyecto) o en capa 2 (compartida).
-- No asumir que "ya está en las reglas" implica no sugerir mejoras.
-
 ---
 
-## Git Commits
+## Git — Ramas y Commits
 
-Siempre usar Conventional Commits:
+### Cuándo crear una rama
+Al iniciar cualquier tarea que implique cambios, preguntar:
+**"¿Estamos trabajando en una rama o directo en main?"**
+
+Si estamos en `main`: sugerir crear una rama antes de tocar cualquier archivo.
+
+Formato de nombres de ramas:
+- `feat/descripcion-corta` → funcionalidad nueva
+- `fix/descripcion-corta` → corrección de bug
+- `chore/descripcion-corta` → mantenimiento, actualizaciones
+- `docs/descripcion-corta` → solo documentación
+
+Ejemplos:
+```bash
+git checkout -b feat/rol-configuracion-base
+git checkout -b fix/handler-nginx-staging
+git checkout -b chore/actualizar-provider-terraform
+```
+
+### Cuándo commitear
+Commitear cuando el trabajo está en un estado estable y verificado, no a la mitad.
+Momentos naturales para commitear:
+
+- Terminaste un rol, playbook o módulo y lo probaste ✅
+- Un script funciona con dry-run sin errores ✅
+- Corregiste un bug y validaste que no rompió nada ✅
+- **Antes** de empezar un cambio grande o experimental ✅
+- Al finalizar cada tarea marcada en `tasks/todo.md` ✅
+
+La regla mental: **"¿Si esto se rompe mañana, qué tan fácil es volver atrás?"**
+Si la respuesta es "difícil" → es momento de commitear.
+
+Al terminar cada tarea: recordame si hay cambios sin commitear y proponé el mensaje.
+
+### Formato — Conventional Commits
 - **Nunca** agregar líneas "Co-authored-by: Cursor..." ni similares
 - Formato: `tipo(scope): descripción`
 - Tipos válidos: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`
@@ -85,8 +131,8 @@ Siempre usar Conventional Commits:
 - Agregar cuerpo después de línea en blanco si el cambio lo requiere
 
 Ejemplos:
-- `feat(auth): agregar autenticación JWT`
-- `fix(api): resolver race condition en endpoint de usuarios`
+- `feat(ansible): agregar rol de configuración base para VMs nuevas`
+- `fix(playbook): corregir orden de ejecución de handlers en nginx`
 - `docs(readme): actualizar instrucciones de instalación`
 - `chore(terraform): actualizar versión del provider AWS`
 - `ci(github-actions): agregar stage de escaneo de imágenes`
@@ -97,6 +143,7 @@ Ejemplos:
 
 ```
 proyecto/
+├── .cursor/rules/       ← reglas capa 2 y 3 del proyecto
 ├── tasks/
 │   ├── todo.md          ← plan de tareas activo
 │   └── lessons.md       ← lecciones aprendidas acumuladas
