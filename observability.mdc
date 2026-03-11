@@ -1,44 +1,120 @@
 # Reglas — Observabilidad (Prometheus / Grafana)
 
+Reglas para métricas, alertas, dashboards, retención y operación. Aplican a todo lo que viva en este repo (configs de Prometheus, Grafana, Alertmanager, reglas de alerta, dashboards).
+
+---
+
 ## Métricas
 
-- Todo servicio debe exponer métricas en `/metrics` en formato Prometheus
-- Instrumentar con el método RED: **R**ate (tasa), **E**rrors (errores), **D**uration (latencia)
+- Todo servicio debe exponer métricas en `/metrics` en formato Prometheus.
+- Instrumentar con el método **RED**: **R**ate (tasa), **E**rrors (errores), **D**uration (latencia).
+- Para infra/recursos usar **USE**: **U**tilization, **S**aturation, **E**rrors.
 - Labels consistentes entre métricas para que los dashboards sean reutilizables:
   ```
   environment, service, instance, version
   ```
-- Nunca usar labels de alta cardinalidad (IDs de usuario, IPs, UUIDs)
+- Nunca usar labels de alta cardinalidad (IDs de usuario, IPs, UUIDs).
+- Naming convention obligatorio: `<namespace>_<subsistema>_<nombre>_<unidad>`
+  ```
+  http_requests_total                   ✅
+  http_request_duration_seconds_bucket  ✅
+  request_count                         ❌ (sin namespace)
+  latency_ms                            ❌ (ms en lugar de seconds)
+  ```
+- Unidades siempre en base SI: `seconds` no `milliseconds`, `bytes` no `megabytes`.
+
+---
 
 ## Alertas
 
-- Verificar que la query retorna datos en **Grafana Explore antes** de crear la alerta
+- Verificar que la query retorna datos en **Grafana Explore** antes de crear la alerta.
 - Cada alerta debe tener anotaciones completas:
   ```yaml
   annotations:
     summary: "{{ $labels.service }} — tasa de errores alta"
     description: "La tasa de errores supera el {{ $value }}% en los últimos 5 minutos"
-    runbook: "https://wiki.interno/runbooks/nombre-alerta"
+    runbook: "https://wiki.interno/runbooks/nombre-alerta"   # o docs/runbooks/nombre-alerta.md en este repo
   ```
-- Definir severidad consistente: `critical` (requiere acción inmediata), `warning` (monitorear)
-- Alertas deben ser **accionables**: si no hay acción clara, no es una alerta, es un dashboard
-- Definir SLOs antes de escribir alertas — la alerta debe proteger el SLO
+- Definir severidad consistente:
+  - `critical` → requiere acción inmediata, despierta a alguien
+  - `warning`  → monitorear, acción en horario laboral
+  - `info`     → contexto, nunca debe paginar
+- Alertas deben ser **accionables**: si no hay acción clara, es un dashboard, no una alerta.
+- Definir SLOs antes de escribir alertas — la alerta debe proteger el SLO.
+- Usar `for:` siempre para evitar falsos positivos por spikes transitorios:
+  ```yaml
+  # Mínimos recomendados
+  critical: for: 2m
+  warning:  for: 5m
+  ```
+- Inhibición: una alerta `critical` debe silenciar la `warning` del mismo servicio.
+
+---
 
 ## Grafana
 
-- Dashboards en código (JSON o Grafonnet), nunca solo en la UI
-- Un dashboard por servicio/dominio, no un mega-dashboard para todo
-- Variables de template para filtrar por `environment` y `service`
-- Provisioning automático de dashboards y datasources via config
+- Dashboards en código (JSON o Grafonnet), nunca solo en la UI.
+- Un dashboard por servicio/dominio, no un mega-dashboard para todo.
+- Variables de template obligatorias: `environment`, `service`.
+- Estructura de carpetas en Grafana:
+  ```
+  Infraestructura/   → hosts, red, disco (Node Exporter, Blackbox, Proxmox)
+  Servicios/         → dashboards por servicio
+  SLOs/              → error budgets y burn rates
+  On-call/           → dashboards para guardia, resumen operativo
+  ```
+- Provisioning automático de dashboards y datasources vía config, nunca ClickOps.
+- Todo panel debe tener unidades configuradas — nunca "none" si hay una unidad real.
+- Usar `$__rate_interval` en lugar de intervalos hardcodeados en las queries.
 
-## Logs (Loki)
+---
+
+## Blackbox Exporter
+
+- Usar módulos estándar según el tipo de check: `http_2xx`, `tcp_connect`, `icmp`.
+- En scrape_config y en alertas, aplicar los mismos labels que al resto: `environment`, `service`, `instance` (el target que se probó).
+- Las métricas de Blackbox (`probe_success`, `probe_duration_seconds`) deben poder filtrarse por `environment` y `service` para reutilizar dashboards.
+
+---
+
+## Logs (Loki) — fase posterior
+
+Cuando se incorpore Loki (no obligatorio para el MVP):
 
 - Logs estructurados en JSON siempre:
   ```json
   {"timestamp": "...", "level": "error", "service": "api", "message": "...", "trace_id": "..."}
   ```
-- Nunca loguear datos sensibles: passwords, tokens, PII
-- Labels de Loki mínimos y de baja cardinalidad: `service`, `environment`, `host`
+- Nunca loguear datos sensibles: passwords, tokens, PII.
+- Labels de Loki mínimos y de baja cardinalidad: `service`, `environment`, `host`.
+- El `trace_id` en logs debe coincidir con el de trazas (Tempo/Jaeger) para correlación.
+- Retención por environment: prod > staging > dev.
+
+---
+
+## Retención y cardinalidad
+
+- Antes de agregar labels nuevos: estimar el impacto en cardinalidad.
+- Límite orientativo: más de **10.000 series activas por job** (por cada `job` en Prometheus) → revisar labels. No confundir con "por instancia".
+- Retención de Prometheus por environment:
+  ```
+  prod:    15 días mínimo (o remote_write a largo plazo)
+  staging: 7 días
+  dev:     2 días
+  ```
+- Para retención larga: configurar remote_write a Thanos, Cortex o Mimir — no escalar solo con disco local.
+
+---
+
+## Scrape config
+
+- `scrape_interval` global: **15s** por defecto; no bajar de **10s** sin justificación.
+- En entornos dev/staging con muchos targets se puede subir a **30s** para reducir carga; documentar la decisión.
+- Targets deben tener labels estáticos que coincidan con las convenciones (`environment`, `service`, `instance`).
+- Usar `honor_labels: false` por defecto — los labels del scrape config tienen precedencia.
+- Service discovery preferido sobre targets estáticos hardcodeados.
+
+---
 
 ## Validación
 
@@ -48,4 +124,52 @@ promtool check rules alertas.yml
 
 # Validar configuración de Prometheus
 promtool check config prometheus.yml
+
+# Chequear cardinalidad de una métrica
+curl -s http://localhost:9090/api/v1/label/__name__/values | jq '.data | length'
+
+# Ver series activas de un job específico
+curl -s 'http://localhost:9090/api/v1/query?query=count({job="mi-servicio"})' | jq
+
+# Reload sin reiniciar (requiere --web.enable-lifecycle)
+curl -X POST http://localhost:9090/-/reload
 ```
+
+---
+
+## Rollback y cambios
+
+- Antes de modificar reglas de alertas en prod: commitear el estado actual como backup.
+- Cambios en `prometheus.yml`: siempre `promtool check config` antes del reload.
+- Si se agrega una métrica nueva de alta cardinalidad por error:
+  1. Remover el label del código
+  2. Esperar que expire la retención o usar `DELETE /api/v1/admin/tsdb/delete_series`
+  3. Documentar en `tasks/lessons.md`
+
+---
+
+## Cambios y aclaraciones respecto a la versión original
+
+### 1. Runbook en el repo
+
+La anotación `runbook` puede apuntar a `docs/runbooks/nombre-alerta.md` en este repo, no solo a wiki interna. Así las alertas son accionables desde el primer día y el runbook se versiona con el código.
+
+### 2. Loki como "fase posterior"
+
+La sección de logs (Loki, trace_id) se marca como "cuando se incorpore Loki" y no obligatoria para el MVP. Primero métricas y alertas; Loki cuando sumes logs.
+
+### 3. Scrape interval por entorno
+
+15s por defecto; en dev/staging se puede usar 30s si hay muchos targets, documentando la decisión. En prod mantener 15s.
+
+### 4. Cardinalidad "por job"
+
+El límite de ~10.000 series activas es **por job** (cada `job` en scrape_configs), no por instancia. Evita interpretar "cada servidor puede tener 10k series".
+
+### 5. Blackbox Exporter
+
+Targets de Blackbox llevan los mismos labels (`environment`, `service`, `instance`) que el resto para que los dashboards de disponibilidad reutilicen las mismas variables.
+
+---
+
+Para revertir o afinar una regla: editar este archivo y reflejarlo en `tasks/lessons.md` si aplica.
