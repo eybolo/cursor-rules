@@ -17,7 +17,7 @@ Este entorno usa un sistema de reglas en 3 capas:
 
 Al iniciar cada sesión:
 1. Leer todos los archivos en `.cursor/rules/` para entender el contexto del proyecto
-2. Revisar `tasks/lessons.md` antes de arrancar
+2. Si existe `tasks/lessons.md` (puede ser solo local; ver `tasks/` más abajo), revisarlo antes de arrancar
 3. Si no hay archivos en `.cursor/rules/`: preguntar qué tecnologías usa el proyecto
 
 Si encontrás una práctica mejor que lo indicado en capa 2 o 3: proponela, explicá el beneficio
@@ -158,9 +158,17 @@ Ejemplos:
 proyecto/
 ├── .cursor/rules/       ← reglas capa 2 y 3 del proyecto
 ├── CHANGELOG.md         ← cambios por versión (semver); alinear con tags/releases
-├── tasks/
+├── tasks/               ← opcional en el remoto: puede ignorarse (solo local)
 │   ├── todo.md          ← plan de tareas activo
 │   └── lessons.md       ← lecciones aprendidas acumuladas
 └── docs/
     └── decisions.md     ← decisiones técnicas importantes y su justificación
 ```
+
+**`tasks/` y `.gitignore`:** Quien prefiera que `todo.md` y `lessons.md` no se suban al
+repositorio puede añadir `tasks/` al `.gitignore` del proyecto y mantenerlos solo en su
+máquina. En clones donde no exista esa carpeta, no asumir contenido. En equipos, la
+coordinación compartida suele ir en issues o merge requests del forja; `tasks/` local
+sirve para planificación y automejora personal sin mezclar notas privadas con el remoto.
+Si `tasks/` estuvo versionado y se pasa a ignorarlo: `git rm -r --cached tasks/` para
+dejar de trackearlo sin borrar los archivos locales.
