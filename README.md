@@ -21,6 +21,7 @@ Detalle y justificación de esta estructura: [docs/decisions.md](docs/decisions.
 | `bash.mdc` | Reglas para scripts y entornos Bash. |
 | `cicd.mdc` | Reglas para pipelines y CI/CD. |
 | `containers.mdc` | Reglas para Docker/containers. |
+| `documentacion-repos.mdc` | Qué va en `docs/` del repo vs documentación central (p. ej. `infra-docs`). Opt-in. |
 | `kubernetes.mdc` | Reglas para proyectos con Kubernetes. |
 | `observability.mdc` | Reglas para monitoreo, logs, métricas. |
 | `proxmox-netbox.mdc` | Reglas para entornos Proxmox + NetBox. |

@@ -1,0 +1,48 @@
+# Reglas — Dónde documentar (`docs/` del repo vs documentación central)
+
+Regla **opt-in** (capa 2): usarla solo en proyectos donde tengas un repo de documentación
+central (p. ej. `infra-docs`, `infra-arquitectura`) además de `docs/` por proyecto.
+No sustituye al `README.md` ni a `docs/decisions.md` local cuando aplique.
+
+---
+
+## `docs/` dentro del repositorio del proyecto
+
+Documentación que **cambia con ese repo** o que **solo tiene sentido al abrir ese proyecto**:
+
+- Cómo usar lo que este repo entrega (Terraform, Ansible, manifests, compose, etc.).
+- Variables, prerequisitos, ejemplos de invocación, inputs/outputs de módulos si no van en el README.
+- Decisiones **acotadas a este stack** (ADR locales) cuando convivan con el código en el mismo cambio.
+
+Criterio: si mañana tocás código en este repo y **el texto debería actualizarse en el mismo PR**, suele ir en **`docs/`** (o en el `README` si es breve).
+
+---
+
+## Documentación central (p. ej. `infra-docs`)
+
+Contenido **transversal** o de **operación global** (varios repos, visión de conjunto):
+
+- Arquitectura de conjunto, diagramas que cruzan sistemas.
+- Onboarding del equipo (“cómo está armada nuestra infra”, enlaces a repos).
+- Runbooks: incidentes, rollback en producción, procedimientos que no dependen de un solo módulo.
+- Estándares o ADRs que aplican a **más de un** repositorio.
+
+Criterio: si alguien necesita entender **todo el entorno** o **operar** sin abrir varios repos, suele ir en la **doc central**.
+
+---
+
+## Regla rápida
+
+| Pregunta | Si es sí → |
+|----------|------------|
+| ¿Solo aplica a **este** repo o se entiende leyendo solo este código? | `docs/` o `README` del repo |
+| ¿Describe **varios** sistemas/repos o **cómo operamos** en general? | Doc central (`infra-docs` o el nombre que uses) |
+
+Evitar duplicar: en la doc central, **enlazar** al `docs/` o README del repo concreto en lugar de copiar procedimientos que cambian con el código.
+
+---
+
+## Uso
+
+Copiar este archivo a `.cursor/rules/` solo en los repositorios donde quieras que el asistente
+aplique esta separación (por ejemplo repos de infra o el repo de documentación central).
