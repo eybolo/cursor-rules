@@ -1,0 +1,20 @@
+# Reglas — CHANGELOG.md y versionado (semver)
+
+## Objetivo
+Usar `CHANGELOG.md` como registro de cambios **por versión** (semver) para quienes consumen el repo (humano y/o pipeline): que se agrego, que se corrigio y que podria romper compatibilidad.
+
+## Que es y que no es
+- **Que es:** registro de cambios **publicados** por version (con fecha `YYYY-MM-DD`), pensado para comunicar el resultado final.
+- **Que no es:** no sustituye al historial de Git. Tampoco lista ramas ni cada merge. Las ramas son trabajo interno; el changelog resume lo que quedo publicado en un tag/release.
+
+## Cuando actualizarlo
+- Al cerrar un release (junto con el tag), o en la misma PR que prepara la version.
+- Mantener secciones tipo **Unreleased** durante el desarrollo es opcional pero util.
+
+## Formato recomendado
+[Keep a Changelog](https://keepachangelog.com/) — secciones `Added` / `Changed` / `Fixed` / `Removed` / `Security` bajo cada version con fecha `YYYY-MM-DD`.
+
+## Tags y releases (GitLab u otros remotos)
+- El **tag** ancla la version en Git (`v1.2.0`).
+- En GitLab, *Releases* asociados al tag: el texto puede copiarse de este archivo (o generarse parcialmente), pero `CHANGELOG.md` sigue siendo la referencia al clonar sin depender de la UI.
+

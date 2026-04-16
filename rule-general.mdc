@@ -8,39 +8,23 @@ simples, mantenibles y auditables por sobre soluciones inteligentes pero opacas.
 
 ---
 
-## Sistema de Reglas por Capas
-
-Este entorno usa un sistema de reglas en 3 capas:
-- **Capa 1**: estas reglas globales en Cursor Settings — aplican a todos los proyectos
-- **Capa 2**: archivos `.mdc` por tecnología en el repo `cursor-rules` — reglas por herramienta
-- **Capa 3**: archivos `.mdc` en `.cursor/rules/` del proyecto — contexto específico del proyecto
-
-Al iniciar cada sesión:
-1. Leer todos los archivos en `.cursor/rules/` para entender el contexto del proyecto
-2. Si existe `tasks/lessons.md` (puede ser solo local; ver `tasks/` más abajo), revisarlo antes de arrancar
-3. Si no hay archivos en `.cursor/rules/`: preguntar qué tecnologías usa el proyecto
-
-Si encontrás una práctica mejor que lo indicado en capa 2 o 3: proponela, explicá el beneficio
-y preguntá si actualizamos la regla correspondiente.
-
----
-
 ## Flujo de Trabajo
 
 ### Planificación primero
 - Para cualquier tarea no trivial (más de 3 pasos o que afecte infra/producción):
-  escribí el plan en `tasks/todo.md` con pasos concretos y verificables antes de tocar nada
+  escribí el plan en el lugar acordado (por ej. `tasks/todo.md` si existe) con pasos concretos
+  y verificables antes de tocar nada
 - Si algo sale mal durante la ejecución: **PARA**. No sigas forzando. Volvé a planificación
 - En infra, un error en cascada es peor que detenerse a repensar
 
 ### Gestión de tareas
 - Marcar cada paso como completado a medida que avanzás
 - Resumen de alto nivel al finalizar cada tarea
-- Actualizar `tasks/lessons.md` después de cualquier corrección o error
+- Aprendizajes: actualizar el lugar destinado a "lessons learned" (por ej. `tasks/lessons.md`) si existe
 
 ### Bucle de automejora
-- Después de cualquier corrección del usuario: anotar el patrón en `tasks/lessons.md`
-- Al inicio de cada sesión sobre el mismo proyecto: revisar `tasks/lessons.md` primero
+- Después de cualquier corrección del usuario: anotar el patrón en el lugar de "lessons learned" si existe
+- Al inicio de cada sesión sobre el mismo proyecto: revisar el material de "lessons learned" si existe
 - Objetivo: que la tasa de errores baje sesión a sesión
 
 ### Límites claros
@@ -90,9 +74,9 @@ y preguntá si actualizamos la regla correspondiente.
 
 ### Cuándo crear una rama
 Al iniciar cualquier tarea que implique cambios, preguntar:
-**"¿Estamos trabajando en una rama o directo en main?"**
+**"¿Estamos trabajando en una rama o directo en `main`?"**
 
-Si estamos en `main`: sugerir crear una rama antes de tocar cualquier archivo.
+Si se va a trabajar directo en `main`, confirmar primero el alcance y el plan de rollback.
 
 Formato de nombres de ramas:
 - `feat/descripcion-corta` → funcionalidad nueva
@@ -115,7 +99,7 @@ Momentos naturales para commitear:
 - Un script funciona con dry-run sin errores ✅
 - Corregiste un bug y validaste que no rompió nada ✅
 - **Antes** de empezar un cambio grande o experimental ✅
-- Al finalizar cada tarea marcada en `tasks/todo.md` ✅
+- Al finalizar cada tarea marcada en el plan local o acordado (si existe) ✅
 
 La regla mental: **"¿Si esto se rompe mañana, qué tan fácil es volver atrás?"**
 Si la respuesta es "difícil" → es momento de commitear.
@@ -136,39 +120,3 @@ Ejemplos:
 - `docs(readme): actualizar instrucciones de instalación`
 - `chore(terraform): actualizar versión del provider AWS`
 - `ci(github-actions): agregar stage de escaneo de imágenes`
-
-### CHANGELOG.md y versionado
-- **Qué es:** registro de cambios **por versión** (semver), pensado para quien consume el repo
-  (humano o pipeline): qué se agregó, qué se corrigió y qué puede romper compatibilidad.
-- **Qué no es:** no sustituye al historial de Git; **no** lista ramas ni cada merge. Las ramas
-  son trabajo interno; el changelog resume el resultado **publicado** en un tag/release.
-- **Cuándo actualizarlo:** al cerrar un release (junto con el tag), o en la misma PR que
-  prepara la versión. Mantener entradas **Unreleased** durante el desarrollo es opcional pero útil.
-- **Formato recomendado:** [Keep a Changelog](https://keepachangelog.com/) — secciones
-  `Added` / `Changed` / `Fixed` / `Removed` / `Security` bajo cada versión con fecha `YYYY-MM-DD`.
-- **Tags y releases (GitLab u otro remoto):** el **tag** ancla la versión en Git (`v1.2.0`).
-  En GitLab: *Releases* asociados al tag; el texto puede copiarse del `CHANGELOG.md` o generarse
-  parcialmente ahí. El archivo en el repo sigue siendo la referencia al clonar sin depender solo de la UI.
-
----
-
-## Estructura de Archivos Esperada por Proyecto
-
-```
-proyecto/
-├── .cursor/rules/       ← reglas capa 2 y 3 del proyecto
-├── CHANGELOG.md         ← cambios por versión (semver); alinear con tags/releases
-├── tasks/               ← opcional en el remoto: puede ignorarse (solo local)
-│   ├── todo.md          ← plan de tareas activo
-│   └── lessons.md       ← lecciones aprendidas acumuladas
-└── docs/
-    └── decisions.md     ← decisiones técnicas importantes y su justificación
-```
-
-**`tasks/` y `.gitignore`:** Quien prefiera que `todo.md` y `lessons.md` no se suban al
-repositorio puede añadir `tasks/` al `.gitignore` del proyecto y mantenerlos solo en su
-máquina. En clones donde no exista esa carpeta, no asumir contenido. En equipos, la
-coordinación compartida suele ir en issues o merge requests del forja; `tasks/` local
-sirve para planificación y automejora personal sin mezclar notas privadas con el remoto.
-Si `tasks/` estuvo versionado y se pasa a ignorarlo: `git rm -r --cached tasks/` para
-dejar de trackearlo sin borrar los archivos locales.
